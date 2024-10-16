@@ -325,8 +325,7 @@ bool UCustomMovementComponent::CheckShouldStopClimbing()
 	const float DotResult = FVector::DotProduct(CurrentClimbableSurfaceNormal, FVector::UpVector);
 	const float DegreeDiff = FMath::RadiansToDegrees(FMath::Acos(DotResult));
 
-	if(DegreeDiff <= 60.f)
-		return true;
+	if(DegreeDiff <= 60.f)	return true;
 	
 	return false;
 }
