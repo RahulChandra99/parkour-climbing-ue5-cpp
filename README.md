@@ -1,3 +1,2 @@
-# mscave-project-parkour-procedural-animations
+# Procedural Parkour and Traversal Animation Techniques in Unreal Engine
 
-## The thesis is uploaded in the _MSCAVE folder
