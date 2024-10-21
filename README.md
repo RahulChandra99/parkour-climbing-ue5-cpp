@@ -1,4 +1,4 @@
-# Procedural Parkour , Traversal and Climbing Animation Techniques in Unreal Engine
+# Procedural Parkour, Traversal and Climbing Animation Techniques in Unreal Engine
 
 This project is focused on developing advanced parkour and traversal mechanics in Unreal Engine using C++. The goal is to create a seamless, dynamic movement system inspired by parkour-based games like *Assassin's Creed*, *Mirror’s Edge*, and *Dying Light*. The project emphasizes procedural generation of climbing routes and traversal systems to enable characters to fluidly navigate through varied environments, including vertical surfaces, ledges, and obstacles.
 
@@ -16,7 +16,7 @@ This project is focused on developing advanced parkour and traversal mechanics i
 4. **AI Integration**: Ensure the AI can also navigate the environment using the same traversal mechanics as the player.
 
 ## TODOs
-- [ ] **Climbing System**: 
+- [X] **Climbing System**: 
     - Implement procedural detection of climbable surfaces.
     - Handle character attachment and detachment from surfaces.
     - Add logic for multiple climbing states (idle, moving, transitioning between surfaces).
