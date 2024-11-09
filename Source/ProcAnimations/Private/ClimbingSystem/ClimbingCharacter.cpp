@@ -20,36 +20,44 @@
 AClimbingCharacter::AClimbingCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
+	// Initialize CameraBoom
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(GetRootComponent());
+
+	// Adjust the camera to create an over-the-shoulder view
+	CameraBoom->TargetArmLength = 150.f; // Closer to the character for Hitman-style camera
+	CameraBoom->SocketOffset = FVector(0.f, 75.f, 60.f); // Offset to the right and slightly above the character
+	CameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
+
+	// Initialize FollowCamera
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom);
+	FollowCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
-	// Don't rotate when the controller rotates. Let that just affect the camera.
+
+	// Disable controller rotation affecting character directly
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
+	// Use custom movement component
 	CustomMovementComponent = Cast<UCustomMovementComponent>(GetCharacterMovement());
-	
+
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
+	GetCustomMovementComponent()->bOrientRotationToMovement = true; // Character moves in the direction of input
+	GetCustomMovementComponent()->RotationRate = FRotator(0.0f, 360.0f, 0.0f); // Slower, more realistic rotation speed
+	GetCustomMovementComponent()->MaxWalkSpeed = 300.f; // Slow, deliberate walk speed
+	GetCustomMovementComponent()->BrakingDecelerationWalking = 1500.f; // Adjust braking for smooth stopping
+	GetCustomMovementComponent()->JumpZVelocity = 0.f; // Hitman doesn't jump, so we can disable or set this to 0
+	GetCustomMovementComponent()->AirControl = 0.f; // Disable air control for grounded movement feel
+	GetCustomMovementComponent()->MinAnalogWalkSpeed = 10.f; // Minimal analog input speed
+	GetCustomMovementComponent()->BrakingDecelerationWalking = 1500.f;
 
-	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
-	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.f;
-	GetCharacterMovement()->AirControl = 0.35f;
-	
-	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
-	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+	// Adjust running mechanics (if applicable)
+	GetCustomMovementComponent()->MaxWalkSpeedCrouched = 200.f; // Hitman walks slower when crouched
 
-	// Create a camera boom (pulls in towards the player if there is a collision)
-	DTPCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("DefaultThirdPersonCameraBoom"));
-	DTPCameraBoom->SetupAttachment(RootComponent);
-	DTPCameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	DTPCameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-	DTPFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("DefaultThirdPersonCamera"));
-	DTPFollowCamera->SetupAttachment(DTPCameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	DTPFollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>("MotionWarpingComp");
 }
@@ -76,7 +84,6 @@ void AClimbingCharacter::BeginPlay()
 		CustomMovementComponent->OnEnterClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterClimbState);
 		CustomMovementComponent->OnExitClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitClimbState);
 		
-		
 	}
 }
 
@@ -97,14 +104,19 @@ void AClimbingCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AClimbingCharacter::Move);
-		
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Started, this, &AClimbingCharacter::Run);
-		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &AClimbingCharacter::Run);
 
+		//Running
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AClimbingCharacter::Run);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AClimbingCharacter::Run);
+
+		//Toggle Running
+		EnhancedInputComponent->BindAction(ToggleSprintAction, ETriggerEvent::Started, this, &AClimbingCharacter::ToggleRun);
+		
+		
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AClimbingCharacter::Look);
 
-
+		//Climbing
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &AClimbingCharacter::OnClimbActionStarted);
 
 	}
@@ -138,12 +150,31 @@ void AClimbingCharacter::Move(const FInputActionValue& Value)
 void AClimbingCharacter::Run(const FInputActionValue& Value)
 {
 	if(!CustomMovementComponent) return;
+
+	if(bIsSprintOn) return;
 	
 	if(Value.GetMagnitude() > 0.f)
 		GetCustomMovementComponent()->MaxWalkSpeed = RunSpeed;
 	else
 		GetCustomMovementComponent()->MaxWalkSpeed = WalkSpeed;
 }
+
+void AClimbingCharacter::ToggleRun(const FInputActionValue& Value)
+{
+	if(!CustomMovementComponent) return;
+
+	if(!bIsSprintOn)
+	{
+		bIsSprintOn = true;
+		GetCustomMovementComponent()->MaxWalkSpeed = RunSpeed;
+	}
+	else if(bIsSprintOn)
+	{
+		bIsSprintOn = false;
+		GetCustomMovementComponent()->MaxWalkSpeed = WalkSpeed;
+	}
+}
+
 
 void AClimbingCharacter::Look(const FInputActionValue& Value)
 {
