@@ -18,10 +18,28 @@ class AClimbingCharacter : public ACharacter
 private:
 	/** Default TP Camera */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
-
+	class USpringArmComponent* FocusCameraBoom;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
+	class UCameraComponent* FocusFollowCamera;
+
+	/** Default TP Camera */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class USpringArmComponent* CombatCameraBoom;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* CombatCamera;
+
+	/** Default TP Camera */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class USpringArmComponent* WideCameraBoom;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* WideFollowCamera;
+
+	/** Default TP Camera */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* FPCamera;
 
 	/** Movement Components */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
@@ -42,20 +60,20 @@ private:
 	class UInputAction* MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ClimbAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* TraversalAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SprintAction;
+	UInputAction* LookAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ToggleSprintAction;
+	UInputAction* SprintAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ToggleSprintAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* CameraSwitchAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ClimbAction;
+	
 	/** Speed Settings */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	float WalkSpeed = 150.f;
@@ -68,6 +86,7 @@ private:
 	void Look(const FInputActionValue& Value);
 	void Run(const FInputActionValue& Value);
 	void ToggleRun(const FInputActionValue& Value);
+	void SwitchCamera(const FInputActionValue& Value);
 	void OnClimbActionStarted(const FInputActionValue& Value);
 	void HandleGroundMovementInput(const FInputActionValue& Value);
 	void HandleClimbMovementInput(const FInputActionValue& Value);
@@ -78,6 +97,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bIsSprintOn = false;
+
+	int CurrentActiveCamera;
+	TArray<USpringArmComponent*> CameraBooms = {FocusCameraBoom, WideCameraBoom, CombatCameraBoom};
+	TArray<UCameraComponent*> Cameras = {FocusFollowCamera, WideFollowCamera, CombatCamera};
 
 protected:
 	/** APawn interface */
@@ -91,8 +114,8 @@ public:
 	
 
 	/** Accessor Functions */
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return FocusCameraBoom; }
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FocusFollowCamera; }
 	FORCEINLINE UCustomMovementComponent* GetCustomMovementComponent() const { return CustomMovementComponent; }
 	FORCEINLINE UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 };

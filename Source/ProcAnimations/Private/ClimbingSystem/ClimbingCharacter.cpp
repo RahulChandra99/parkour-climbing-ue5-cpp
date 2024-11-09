@@ -20,19 +20,22 @@
 AClimbingCharacter::AClimbingCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
-	// Initialize CameraBoom
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(GetRootComponent());
 
+
+	/** DefaultFocusFollowCamera */
+
+	FocusCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	FocusCameraBoom->SetupAttachment(GetRootComponent());
 	// Adjust the camera to create an over-the-shoulder view
-	CameraBoom->TargetArmLength = 150.f; // Closer to the character for Hitman-style camera
-	CameraBoom->SocketOffset = FVector(0.f, 75.f, 60.f); // Offset to the right and slightly above the character
-	CameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
+	FocusCameraBoom->TargetArmLength = 150.f; // Closer to the character for Hitman-style camera
+	FocusCameraBoom->SocketOffset = FVector(0.f, 75.f, 60.f); // Offset to the right and slightly above the character
+	FocusCameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
 
 	// Initialize FollowCamera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom);
-	FollowCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+	FocusFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FocusFollowCamera"));
+	FocusFollowCamera->SetupAttachment(FocusCameraBoom);
+	FocusFollowCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+	
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -112,26 +115,19 @@ void AClimbingCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 		//Toggle Running
 		EnhancedInputComponent->BindAction(ToggleSprintAction, ETriggerEvent::Started, this, &AClimbingCharacter::ToggleRun);
 		
-		
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AClimbingCharacter::Look);
 
 		//Climbing
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &AClimbingCharacter::OnClimbActionStarted);
 
+		//Camera Switch
+		EnhancedInputComponent->BindAction(CameraSwitchAction, ETriggerEvent::Started, this, &AClimbingCharacter::OnClimbActionStarted);
+
 	}
 
 }
 
-void AClimbingCharacter::OnPlayerEnterClimbState()
-{
-	
-}
-
-void AClimbingCharacter::OnPlayerExitClimbState()
-{
-	
-}
 
 void AClimbingCharacter::Move(const FInputActionValue& Value)
 {
@@ -174,6 +170,32 @@ void AClimbingCharacter::ToggleRun(const FInputActionValue& Value)
 		GetCustomMovementComponent()->MaxWalkSpeed = WalkSpeed;
 	}
 }
+
+	
+
+	void AClimbingCharacter::SwitchCamera(const FInputActionValue& Value)
+	{
+		
+		if (!Value.Get<bool>())
+			return;
+
+		// Cycle through cameras
+		CurrentActiveCamera = (CurrentActiveCamera + 1) % CameraBooms.Num();
+
+		// Deactivate all CameraBooms and cameras
+		for (int32 i = 0; i < CameraBooms.Num(); i++)
+		{
+			CameraBooms[i]->SetActive(false);
+			Cameras[i]->SetActive(false);
+		}
+
+		// Activate the selected CameraBoom and camera
+		CameraBooms[CurrentActiveCamera]->SetActive(true);
+		Cameras[CurrentActiveCamera]->SetActive(true);
+	}
+
+
+
 
 
 void AClimbingCharacter::Look(const FInputActionValue& Value)
@@ -248,6 +270,14 @@ void AClimbingCharacter::HandleClimbMovementInput(const FInputActionValue& Value
 	// add movement 
 	AddMovementInput(ForwardDirection, MovementVector.Y);
 	AddMovementInput(RightDirection, MovementVector.X);
+}
+
+void AClimbingCharacter::OnPlayerEnterClimbState()
+{
+}
+
+void AClimbingCharacter::OnPlayerExitClimbState()
+{
 }
 
 
