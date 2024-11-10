@@ -21,20 +21,49 @@ AClimbingCharacter::AClimbingCharacter(const FObjectInitializer& ObjectInitializ
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 
+	/** Default Wide TP Camera */
 
-	/** DefaultFocusFollowCamera */
-
-	FocusCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	FocusCameraBoom->SetupAttachment(GetRootComponent());
+	TPWideCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("TPWideCameraBoom"));
+	TPWideCameraBoom->SetupAttachment(GetRootComponent());
 	// Adjust the camera to create an over-the-shoulder view
-	FocusCameraBoom->TargetArmLength = 150.f; // Closer to the character for Hitman-style camera
-	FocusCameraBoom->SocketOffset = FVector(0.f, 75.f, 60.f); // Offset to the right and slightly above the character
-	FocusCameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
-
+	TPWideCameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
 	// Initialize FollowCamera
-	FocusFollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FocusFollowCamera"));
-	FocusFollowCamera->SetupAttachment(FocusCameraBoom);
-	FocusFollowCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+	TPWideCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPWideCamera"));
+	TPWideCamera->SetupAttachment(TPWideCameraBoom);
+	TPWideCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+	
+	/** TP Camera */
+
+	TPCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("TPCameraBoom"));
+	TPCameraBoom->SetupAttachment(GetRootComponent());
+	// Adjust the camera to create an over-the-shoulder view
+	TPCameraBoom->TargetArmLength = 200.f; 
+	TPCameraBoom->SocketOffset = FVector(0.f, 50.f, 40.f); // Offset to the right and slightly above the character
+	TPCameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
+	// Initialize FollowCamera
+	TPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPCamera"));
+	TPCamera->SetupAttachment(TPCameraBoom);
+	TPCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+
+	TPCameraBoom->SetActive(false);
+	TPCamera->SetActive(false);
+	
+	/** Combat TP Camera */
+
+	CombatCameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CombatCameraBoom"));
+	CombatCameraBoom->SetupAttachment(GetRootComponent());
+	// Adjust the camera to create an over-the-shoulder view
+	CombatCameraBoom->TargetArmLength = 150.f; 
+	CombatCameraBoom->SocketOffset = FVector(0.f, 75.f, 60.f); // Offset to the right and slightly above the character
+	CombatCameraBoom->bUsePawnControlRotation = true; // Camera rotates with the controller
+	// Initialize FollowCamera
+	CombatCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CombatCamera"));
+	CombatCamera->SetupAttachment(CombatCameraBoom);
+	CombatCamera->bUsePawnControlRotation = false; // Camera is independent of the character rotation
+
+	CombatCameraBoom->SetActive(false);
+	CombatCamera->SetActive(false);
+	
 	
 
 	// Set size for collision capsule
@@ -122,7 +151,7 @@ void AClimbingCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &AClimbingCharacter::OnClimbActionStarted);
 
 		//Camera Switch
-		EnhancedInputComponent->BindAction(CameraSwitchAction, ETriggerEvent::Started, this, &AClimbingCharacter::OnClimbActionStarted);
+		EnhancedInputComponent->BindAction(CameraSwitchAction, ETriggerEvent::Started, this, &AClimbingCharacter::SwitchCamera);
 
 	}
 
@@ -175,26 +204,62 @@ void AClimbingCharacter::ToggleRun(const FInputActionValue& Value)
 
 	void AClimbingCharacter::SwitchCamera(const FInputActionValue& Value)
 	{
-		
+		// Validate the input action value
 		if (!Value.Get<bool>())
 			return;
 
-		// Cycle through cameras
-		CurrentActiveCamera = (CurrentActiveCamera + 1) % CameraBooms.Num();
+		// Increment camera index and loop back if it exceeds the limit
+		CurrentActiveCamera = (CurrentActiveCamera + 1) % 3;
 
-		// Deactivate all CameraBooms and cameras
-		for (int32 i = 0; i < CameraBooms.Num(); i++)
+		// Deactivate all cameras initially
+		DeactivateAllCameras();
+
+		// Activate the selected camera based on CurrentActiveCamera
+		switch (CurrentActiveCamera)
 		{
-			CameraBooms[i]->SetActive(false);
-			Cameras[i]->SetActive(false);
+		case 0:
+			ActivateCamera(TPWideCameraBoom, TPWideCamera);
+			break;
+		case 1:
+			ActivateCamera(CombatCameraBoom, CombatCamera);
+			break;
+		case 2:
+			ActivateCamera(TPCameraBoom, TPCamera);
+			break;
+		default:
+			UE_LOG(LogTemp, Warning, TEXT("Invalid camera index: %d"), CurrentActiveCamera);
+			break;
 		}
+	}
 
-		// Activate the selected CameraBoom and camera
-		CameraBooms[CurrentActiveCamera]->SetActive(true);
-		Cameras[CurrentActiveCamera]->SetActive(true);
+	// Helper to deactivate all cameras
+	void AClimbingCharacter::DeactivateAllCameras()
+	{
+		TPCameraBoom->SetActive(false);
+		TPCamera->SetActive(false);
+
+		CombatCameraBoom->SetActive(false);
+		CombatCamera->SetActive(false);
+
+		TPWideCameraBoom->SetActive(false);
+		TPWideCamera->SetActive(false);
+	}
+
+	// Helper to activate a specific camera
+	void AClimbingCharacter::ActivateCamera(USceneComponent* CameraBoom, UCameraComponent* Camera)
+	{
+		if (CameraBoom)
+		{
+			CameraBoom->SetActive(true);
+		}
+		if (Camera)
+		{
+			Camera->SetActive(true);
+		}
 	}
 
 
+	
 
 
 

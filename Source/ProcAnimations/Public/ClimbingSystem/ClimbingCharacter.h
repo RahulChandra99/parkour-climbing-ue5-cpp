@@ -16,30 +16,27 @@ class AClimbingCharacter : public ACharacter
 	GENERATED_BODY()
 
 private:
-	/** Default TP Camera */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* FocusCameraBoom;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FocusFollowCamera;
-
-	/** Default TP Camera */
+	/** Combat TP Camera */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CombatCameraBoom;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* CombatCamera;
-
-	/** Default TP Camera */
+	
+	/** TP Camera */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* WideCameraBoom;
+	class USpringArmComponent* TPCameraBoom;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* WideFollowCamera;
-
+	class UCameraComponent* TPCamera;
+	
 	/** Default TP Camera */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FPCamera;
+	class USpringArmComponent* TPWideCameraBoom;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* TPWideCamera;
+	
 
 	/** Movement Components */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
@@ -87,6 +84,8 @@ private:
 	void Run(const FInputActionValue& Value);
 	void ToggleRun(const FInputActionValue& Value);
 	void SwitchCamera(const FInputActionValue& Value);
+	void DeactivateAllCameras();
+	void ActivateCamera(USceneComponent* CameraBoom, UCameraComponent* Camera);
 	void OnClimbActionStarted(const FInputActionValue& Value);
 	void HandleGroundMovementInput(const FInputActionValue& Value);
 	void HandleClimbMovementInput(const FInputActionValue& Value);
@@ -98,9 +97,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	bool bIsSprintOn = false;
 
-	int CurrentActiveCamera;
-	TArray<USpringArmComponent*> CameraBooms = {FocusCameraBoom, WideCameraBoom, CombatCameraBoom};
-	TArray<UCameraComponent*> Cameras = {FocusFollowCamera, WideFollowCamera, CombatCamera};
+	int CurrentActiveCamera = 0;
 
 protected:
 	/** APawn interface */
@@ -114,8 +111,6 @@ public:
 	
 
 	/** Accessor Functions */
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return FocusCameraBoom; }
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FocusFollowCamera; }
 	FORCEINLINE UCustomMovementComponent* GetCustomMovementComponent() const { return CustomMovementComponent; }
 	FORCEINLINE UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 };
