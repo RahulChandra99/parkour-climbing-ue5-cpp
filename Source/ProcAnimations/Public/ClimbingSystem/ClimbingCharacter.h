@@ -69,6 +69,9 @@ private:
 	UInputAction* CameraSwitchAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* CrouchAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ClimbAction;
 	
 	/** Speed Settings */
@@ -84,6 +87,7 @@ private:
 	void Run(const FInputActionValue& Value);
 	void ToggleRun(const FInputActionValue& Value);
 	void SwitchCamera(const FInputActionValue& Value);
+	void Crouching(const FInputActionValue& Value);
 	void DeactivateAllCameras();
 	void ActivateCamera(USceneComponent* CameraBoom, UCameraComponent* Camera);
 	void OnClimbActionStarted(const FInputActionValue& Value);
@@ -98,6 +102,9 @@ private:
 	bool bIsSprintOn = false;
 
 	int CurrentActiveCamera = 0;
+
+	bool bIsCrouchActive;
+
 
 protected:
 	/** APawn interface */

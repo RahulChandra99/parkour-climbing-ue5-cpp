@@ -153,6 +153,9 @@ void AClimbingCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 		//Camera Switch
 		EnhancedInputComponent->BindAction(CameraSwitchAction, ETriggerEvent::Started, this, &AClimbingCharacter::SwitchCamera);
 
+		//Crouch
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &AClimbingCharacter::Crouching);
+
 	}
 
 }
@@ -232,7 +235,22 @@ void AClimbingCharacter::ToggleRun(const FInputActionValue& Value)
 		}
 	}
 
-	// Helper to deactivate all cameras
+	void AClimbingCharacter::Crouching(const FInputActionValue& Value)
+	{
+		if(!bIsCrouchActive)
+		{
+			bIsCrouchActive = true;
+			Crouch();
+		}
+	else
+		{
+			bIsCrouchActive = false;
+			UnCrouch();
+		}
+			
+	}
+
+// Helper to deactivate all cameras
 	void AClimbingCharacter::DeactivateAllCameras()
 	{
 		TPCameraBoom->SetActive(false);
