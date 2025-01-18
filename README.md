@@ -15,7 +15,7 @@ This project is focused on developing advanced parkour and traversal mechanics i
 3. **Physics-based Movement**: Integrate physics to make movement feel weighty and responsive, simulating realistic parkour motion.
 4. **AI Integration**: Ensure the AI can also navigate the environment using the same traversal mechanics as the player.
 
-## TODOs
+<!--- ## TODOs
 - [X] **Climbing System**: 
     - Implement procedural detection of climbable surfaces.
     - Handle character attachment and detachment from surfaces.
@@ -42,4 +42,5 @@ This project is focused on developing advanced parkour and traversal mechanics i
 - [ ] **Multiplayer Support**: Extend the traversal system to support multiplayer scenarios with synchronized parkour mechanics.
 - [ ] **Customization**: Allow players to customize their movement style and animations (e.g., choose between fast-paced or fluid parkour).
 
+--->
 
